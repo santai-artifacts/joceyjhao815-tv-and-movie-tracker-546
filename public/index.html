@@ -272,7 +272,6 @@
       <section class="hero">
         <h1>Your shows, tracked to the episode.</h1>
         <p>Search for any series, add it, and tick off episodes season by season. Your progress is saved automatically.</p>
-        <div class="stats" id="stats"></div>
       </section>
       <div id="library"></div>
     </div>
@@ -362,17 +361,6 @@ async function loadLibrary() {
   let shows;
   try { shows = await api("/api/shows"); } catch { shows = []; }
   addedIds = new Set(shows.map((s) => s.id));
-
-  // Stats
-  const totalShows = shows.length;
-  const totalEps = shows.reduce((a, s) => a + s.total, 0);
-  const watchedEps = shows.reduce((a, s) => a + s.watched, 0);
-  const completed = shows.filter((s) => s.total > 0 && s.watched === s.total).length;
-  $("#stats").innerHTML = totalShows ? `
-    <div class="stat"><div class="n">${totalShows}</div><div class="l">Shows tracked</div></div>
-    <div class="stat"><div class="n">${watchedEps}<span style="color:var(--faint);font-weight:500">/${totalEps}</span></div><div class="l">Episodes watched</div></div>
-    <div class="stat"><div class="n">${completed}</div><div class="l">Completed</div></div>
-  ` : "";
 
   const lib = $("#library");
   if (!shows.length) {
