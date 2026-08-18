@@ -1,0 +1,8 @@
+{
+  "name": "episode-tracker",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun run server.ts"
+  }
+}

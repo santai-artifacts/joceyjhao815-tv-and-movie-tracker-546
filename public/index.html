@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bingekeeper — TV Episode Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0c0e14;
+    --bg-2: #12151f;
+    --surface: #171b28;
+    --surface-2: #1e2333;
+    --line: #262b3d;
+    --text: #eef1f7;
+    --muted: #8b93a7;
+    --faint: #5b6277;
+    --accent: #7c5cff;
+    --accent-2: #a78bfa;
+    --good: #22c98d;
+    --good-dim: #14352a;
+    --danger: #ff5c72;
+    --radius: 16px;
+    --shadow: 0 10px 40px -12px rgba(0,0,0,.6);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #1a1730 0%, transparent 55%),
+                radial-gradient(900px 500px at -10% 10%, #10202e 0%, transparent 50%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: "Sora", sans-serif; margin: 0; letter-spacing: -0.02em; }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* Header */
+  header {
+    position: sticky; top: 0; z-index: 30;
+    backdrop-filter: blur(14px);
+    background: rgba(12,14,20,.72);
+    border-bottom: 1px solid var(--line);
+  }
+  .head-inner {
+    max-width: 1080px; margin: 0 auto; padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; font-family: "Sora"; font-weight: 700; font-size: 20px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), #4f9dff);
+    box-shadow: 0 6px 18px -6px var(--accent);
+    font-size: 18px;
+  }
+  .brand span { color: var(--accent-2); }
+
+  .search-box { position: relative; flex: 1; min-width: 240px; max-width: 460px; margin-left: auto; }
+  .search-box input {
+    width: 100%; padding: 12px 14px 12px 42px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--text);
+    border-radius: 12px; font-size: 15px; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,.18); }
+  .search-box .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+
+  /* Search dropdown */
+  .results {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 40;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden; max-height: 70vh; overflow-y: auto;
+    display: none;
+  }
+  .results.open { display: block; }
+  .res-item {
+    display: flex; gap: 12px; padding: 10px 12px; align-items: center;
+    border-bottom: 1px solid var(--line); transition: background .12s;
+  }
+  .res-item:last-child { border-bottom: none; }
+  .res-item:hover { background: var(--surface); }
+  .res-item img, .res-thumb {
+    width: 46px; height: 66px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+    background: var(--bg-2); display: grid; place-items: center; color: var(--faint); font-size: 20px;
+  }
+  .res-meta { flex: 1; min-width: 0; }
+  .res-meta .t { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res-meta .s { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .res-add {
+    padding: 8px 14px; border-radius: 9px; border: none; font-weight: 600; font-size: 13px;
+    background: var(--accent); color: white; flex-shrink: 0; transition: transform .1s, background .2s;
+  }
+  .res-add:hover { background: var(--accent-2); }
+  .res-add:active { transform: scale(.95); }
+  .res-add.added { background: var(--good-dim); color: var(--good); cursor: default; }
+  .res-empty, .res-loading { padding: 20px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* Hero / stats */
+  .hero { padding: 40px 0 26px; }
+  .hero h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.05; }
+  .hero p { color: var(--muted); margin: 12px 0 0; font-size: 16px; max-width: 560px; }
+  .stats { display: flex; gap: 26px; margin-top: 24px; flex-wrap: wrap; }
+  .stat .n { font-family: "Sora"; font-weight: 700; font-size: 26px; }
+  .stat .l { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  /* Show grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; margin-top: 8px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; cursor: pointer; transition: transform .18s, border-color .18s, box-shadow .18s;
+    display: flex; flex-direction: column;
+  }
+  .card:hover { transform: translateY(-4px); border-color: #34406b; box-shadow: var(--shadow); }
+  .poster { aspect-ratio: 2/3; background: var(--bg-2); position: relative; overflow: hidden; }
+  .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .poster .ph { width: 100%; height: 100%; display: grid; place-items: center; color: var(--faint); font-size: 40px; }
+  .badge {
+    position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; backdrop-filter: blur(6px);
+    background: rgba(12,14,20,.7); border: 1px solid var(--line);
+  }
+  .badge.done { background: rgba(34,201,141,.9); color: #052a1c; border-color: transparent; }
+  .card-body { padding: 14px; }
+  .card-body .name { font-weight: 600; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-body .sub { color: var(--muted); font-size: 12.5px; margin: 4px 0 12px; }
+  .bar { height: 7px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; transition: width .5s ease; }
+  .bar.full > i { background: linear-gradient(90deg, var(--good), #5be0b0); }
+  .prog-txt { display: flex; justify-content: space-between; font-size: 12px; margin-top: 8px; color: var(--muted); }
+  .prog-txt b { color: var(--text); font-weight: 600; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 70px 20px; border: 1.5px dashed var(--line); border-radius: 20px; margin-top: 10px; }
+  .empty .em { font-size: 46px; }
+  .empty h3 { font-size: 20px; margin: 14px 0 6px; }
+  .empty p { color: var(--muted); margin: 0 auto; max-width: 380px; }
+
+  /* Detail view (modal-ish full page) */
+  .detail { display: none; }
+  .detail.open { display: block; }
+  .app.detail-open .home { display: none; }
+
+  .back {
+    display: inline-flex; align-items: center; gap: 7px; margin: 24px 0 20px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--text);
+    padding: 9px 15px; border-radius: 10px; font-size: 14px; font-weight: 500; transition: background .15s;
+  }
+  .back:hover { background: var(--surface-2); }
+
+  .show-head { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 30px; }
+  .show-head .poster-lg {
+    width: 190px; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden; flex-shrink: 0;
+    background: var(--bg-2); box-shadow: var(--shadow);
+  }
+  .show-head .poster-lg img { width: 100%; height: 100%; object-fit: cover; }
+  .show-head .poster-lg .ph { display: grid; place-items: center; height: 100%; font-size: 46px; color: var(--faint); }
+  .show-info { flex: 1; min-width: 260px; }
+  .show-info h1 { font-size: clamp(26px, 4vw, 36px); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  .chip { padding: 5px 11px; border-radius: 999px; font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
+  .chip.status { color: var(--accent-2); }
+  .summary { color: var(--muted); line-height: 1.6; font-size: 15px; max-width: 640px; }
+  .show-actions { display: flex; gap: 12px; margin-top: 18px; align-items: center; flex-wrap: wrap; }
+  .overall {
+    display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line);
+    padding: 12px 16px; border-radius: 12px; min-width: 240px;
+  }
+  .overall .ring { flex-shrink: 0; }
+  .overall .txt .big { font-family: "Sora"; font-weight: 700; font-size: 20px; }
+  .overall .txt .small { color: var(--muted); font-size: 12.5px; }
+  .btn-danger {
+    background: transparent; border: 1px solid var(--line); color: var(--danger);
+    padding: 10px 15px; border-radius: 10px; font-size: 13.5px; font-weight: 500; transition: background .15s, border-color .15s;
+  }
+  .btn-danger:hover { background: rgba(255,92,114,.1); border-color: var(--danger); }
+
+  /* Seasons */
+  .season { border: 1px solid var(--line); border-radius: 14px; margin-bottom: 14px; overflow: hidden; background: var(--surface); }
+  .season-head {
+    display: flex; align-items: center; gap: 14px; padding: 15px 18px; cursor: pointer;
+    user-select: none; transition: background .15s;
+  }
+  .season-head:hover { background: var(--surface-2); }
+  .season-head .caret { transition: transform .2s; color: var(--muted); }
+  .season.open .caret { transform: rotate(90deg); }
+  .season-head .st { font-family: "Sora"; font-weight: 600; font-size: 16px; }
+  .season-head .scount { color: var(--muted); font-size: 13px; }
+  .season-head .mini-bar { flex: 1; max-width: 200px; height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-left: auto; }
+  .season-head .mini-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .season-head .mini-bar.full > i { background: var(--good); }
+  .season-toggle {
+    padding: 7px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line);
+    background: var(--bg-2); color: var(--text); white-space: nowrap; transition: background .15s;
+  }
+  .season-toggle:hover { background: var(--surface-2); }
+
+  .eps { display: none; border-top: 1px solid var(--line); }
+  .season.open .eps { display: block; }
+  .ep {
+    display: flex; align-items: center; gap: 14px; padding: 12px 18px;
+    border-bottom: 1px solid var(--line); transition: background .12s;
+  }
+  .ep:last-child { border-bottom: none; }
+  .ep:hover { background: var(--surface-2); }
+  .ep.done .ep-name { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+
+  .check {
+    width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--line);
+    flex-shrink: 0; display: grid; place-items: center; cursor: pointer;
+    transition: background .15s, border-color .15s, transform .1s; background: transparent;
+  }
+  .check:hover { border-color: var(--accent); }
+  .check.on { background: var(--good); border-color: var(--good); }
+  .check.on:active { transform: scale(.88); }
+  .check svg { opacity: 0; transform: scale(.5); transition: opacity .15s, transform .15s; }
+  .check.on svg { opacity: 1; transform: scale(1); }
+
+  .ep-num { font-family: "Sora"; font-weight: 600; font-size: 13px; color: var(--faint); width: 42px; flex-shrink: 0; }
+  .ep-main { flex: 1; min-width: 0; cursor: pointer; }
+  .ep-name { font-weight: 500; font-size: 14.5px; }
+  .ep-meta { color: var(--faint); font-size: 12px; margin-top: 3px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120px);
+    background: var(--surface-2); border: 1px solid var(--line); color: var(--text);
+    padding: 13px 20px; border-radius: 12px; font-size: 14px; box-shadow: var(--shadow);
+    z-index: 100; transition: transform .35s cubic-bezier(.2,.9,.3,1.3); display: flex; gap: 10px; align-items: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err { border-color: var(--danger); }
+
+  .spinner { width: 18px; height: 18px; border: 2.5px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center-load { display: flex; justify-content: center; padding: 60px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  @media (max-width: 560px) {
+    .head-inner { gap: 12px; }
+    .search-box { order: 3; max-width: none; margin-left: 0; }
+    .brand { font-size: 18px; }
+    .show-head .poster-lg { width: 130px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="head-inner">
+      <div class="brand"><span class="logo">📺</span>Binge<span>keeper</span></div>
+      <div class="search-box">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input id="search" type="text" placeholder="Search any TV show to add…" autocomplete="off" />
+        <div class="results" id="results"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <div class="home" id="home">
+    <div class="wrap">
+      <section class="hero">
+        <h1>Your shows, tracked to the episode.</h1>
+        <p>Search for any series, add it, and tick off episodes season by season. Your progress is saved automatically.</p>
+        <div class="stats" id="stats"></div>
+      </section>
+      <div id="library"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="detail" id="detail">
+    <div class="wrap" id="detail-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const api = async (path, opts) => {
+  const r = await fetch(path, opts);
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Request failed"); }
+  return r.json();
+};
+const esc = (s) => (s ?? "").toString().replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let addedIds = new Set();
+
+// ---------- Toast ----------
+let toastTimer;
+function toast(msg, isErr = false) {
+  const t = $("#toast");
+  t.innerHTML = (isErr ? "⚠️ " : "✓ ") + esc(msg);
+  t.classList.toggle("err", isErr);
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+// ---------- Search ----------
+const searchInput = $("#search");
+const resultsEl = $("#results");
+let searchTimer, lastQuery = "";
+
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim();
+  clearTimeout(searchTimer);
+  if (!q) { resultsEl.classList.remove("open"); return; }
+  resultsEl.classList.add("open");
+  resultsEl.innerHTML = '<div class="res-loading">Searching…</div>';
+  searchTimer = setTimeout(() => runSearch(q), 280);
+});
+searchInput.addEventListener("focus", () => { if (searchInput.value.trim() && resultsEl.innerHTML) resultsEl.classList.add("open"); });
+document.addEventListener("click", (e) => { if (!e.target.closest(".search-box")) resultsEl.classList.remove("open"); });
+
+async function runSearch(q) {
+  lastQuery = q;
+  try {
+    const res = await api("/api/search?q=" + encodeURIComponent(q));
+    if (q !== lastQuery) return;
+    if (!res.length) { resultsEl.innerHTML = '<div class="res-empty">No shows found for “' + esc(q) + '”</div>'; return; }
+    resultsEl.innerHTML = res.map((s) => `
+      <div class="res-item" data-id="${s.id}">
+        ${s.image ? `<img src="${esc(s.image)}" alt="${esc(s.name)}" loading="lazy">` : `<div class="res-thumb">📺</div>`}
+        <div class="res-meta">
+          <div class="t">${esc(s.name)}</div>
+          <div class="s">${[s.premiered ? s.premiered.slice(0,4) : null, s.network, s.genres.slice(0,2).join(", ")].filter(Boolean).join(" · ")}</div>
+        </div>
+        <button class="res-add ${addedIds.has(s.id) ? "added" : ""}" data-add="${s.id}">${addedIds.has(s.id) ? "Added" : "+ Add"}</button>
+      </div>`).join("");
+  } catch (e) { resultsEl.innerHTML = '<div class="res-empty">' + esc(e.message) + "</div>"; }
+}
+
+resultsEl.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-add]");
+  if (!btn) return;
+  const id = Number(btn.dataset.add);
+  if (addedIds.has(id)) return;
+  btn.disabled = true; btn.textContent = "Adding…";
+  try {
+    const r = await api("/api/shows", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    addedIds.add(id);
+    btn.textContent = "Added"; btn.classList.add("added");
+    toast(r.alreadyAdded ? "Already in your library" : "Added — " + (r.episodeCount || 0) + " episodes");
+    await loadLibrary();
+  } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = "+ Add"; }
+});
+
+// ---------- Library / Home ----------
+async function loadLibrary() {
+  let shows;
+  try { shows = await api("/api/shows"); } catch { shows = []; }
+  addedIds = new Set(shows.map((s) => s.id));
+
+  // Stats
+  const totalShows = shows.length;
+  const totalEps = shows.reduce((a, s) => a + s.total, 0);
+  const watchedEps = shows.reduce((a, s) => a + s.watched, 0);
+  const completed = shows.filter((s) => s.total > 0 && s.watched === s.total).length;
+  $("#stats").innerHTML = totalShows ? `
+    <div class="stat"><div class="n">${totalShows}</div><div class="l">Shows tracked</div></div>
+    <div class="stat"><div class="n">${watchedEps}<span style="color:var(--faint);font-weight:500">/${totalEps}</span></div><div class="l">Episodes watched</div></div>
+    <div class="stat"><div class="n">${completed}</div><div class="l">Completed</div></div>
+  ` : "";
+
+  const lib = $("#library");
+  if (!shows.length) {
+    lib.innerHTML = `
+      <div class="empty">
+        <div class="em">🍿</div>
+        <h3>No shows yet</h3>
+        <p>Use the search bar above to find a show — try “Breaking Bad”, “The Office”, or anything you're watching.</p>
+      </div>`;
+    return;
+  }
+  lib.innerHTML = `<div class="grid">${shows.map(cardHtml).join("")}</div>`;
+  lib.querySelectorAll(".card").forEach((c) => c.addEventListener("click", () => openShow(Number(c.dataset.id))));
+}
+
+function cardHtml(s) {
+  const pct = s.total ? Math.round((s.watched / s.total) * 100) : 0;
+  const done = s.total > 0 && s.watched === s.total;
+  return `
+    <div class="card" data-id="${s.id}">
+      <div class="poster">
+        ${s.image ? `<img src="${esc(s.image)}" alt="${esc(s.name)}" loading="lazy">` : `<div class="ph">📺</div>`}
+        <div class="badge ${done ? "done" : ""}">${done ? "✓ Done" : pct + "%"}</div>
+      </div>
+      <div class="card-body">
+        <div class="name">${esc(s.name)}</div>
+        <div class="sub">${[s.premiered ? s.premiered.slice(0,4) : null, s.status].filter(Boolean).join(" · ") || "&nbsp;"}</div>
+        <div class="bar ${done ? "full" : ""}"><i style="width:${pct}%"></i></div>
+        <div class="prog-txt"><span><b>${s.watched}</b> / ${s.total} eps</span><span>${pct}%</span></div>
+      </div>
+    </div>`;
+}
+
+// ---------- Detail ----------
+const appEl = $("#app");
+let current = null;
+
+function ring(pct, size = 52) {
+  const r = (size - 8) / 2, c = 2 * Math.PI * r, off = c - (pct / 100) * c;
+  const col = pct === 100 ? "var(--good)" : "var(--accent)";
+  return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="6"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dashoffset .5s"/>
+    <text x="50%" y="50%" text-anchor="middle" dy=".35em" fill="var(--text)" font-size="13" font-weight="700" font-family="Sora">${pct}%</text>
+  </svg>`;
+}
+
+async function openShow(id) {
+  window.scrollTo(0, 0);
+  appEl.classList.add("detail-open");
+  $("#detail").classList.add("open");
+  $("#detail-body").innerHTML = '<div class="center-load"><div class="spinner"></div></div>';
+  try {
+    current = await api("/api/shows/" + id);
+    renderDetail();
+  } catch (e) { $("#detail-body").innerHTML = '<div class="empty"><p>' + esc(e.message) + "</p></div>"; }
+}
+
+function closeShow() {
+  appEl.classList.remove("detail-open");
+  $("#detail").classList.remove("open");
+  current = null;
+  loadLibrary();
+}
+
+function seasonStats(s) {
+  const total = s.episodes.length;
+  const watched = s.episodes.filter((e) => e.watched).length;
+  return { total, watched, pct: total ? Math.round((watched / total) * 100) : 0 };
+}
+
+function renderDetail() {
+  const s = current;
+  const total = s.seasons.reduce((a, x) => a + x.episodes.length, 0);
+  const watched = s.seasons.reduce((a, x) => a + x.episodes.filter((e) => e.watched).length, 0);
+  const pct = total ? Math.round((watched / total) * 100) : 0;
+  const seasonLabel = (n) => (n === 0 ? "Specials" : "Season " + n);
+
+  $("#detail-body").innerHTML = `
+    <button class="back" id="backBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg>
+      Library
+    </button>
+    <div class="show-head">
+      <div class="poster-lg">${s.image ? `<img src="${esc(s.image)}" alt="${esc(s.name)}">` : `<div class="ph">📺</div>`}</div>
+      <div class="show-info">
+        <h1>${esc(s.name)}</h1>
+        <div class="chips">
+          ${s.status ? `<span class="chip status">${esc(s.status)}</span>` : ""}
+          ${s.premiered ? `<span class="chip">${s.premiered.slice(0,4)}${s.ended ? "–" + s.ended.slice(0,4) : ""}</span>` : ""}
+          ${s.network ? `<span class="chip">${esc(s.network)}</span>` : ""}
+          ${(s.genres || []).slice(0,3).map((g) => `<span class="chip">${esc(g)}</span>`).join("")}
+        </div>
+        <p class="summary">${esc(s.summary) || "No description available."}</p>
+        <div class="show-actions">
+          <div class="overall">
+            ${ring(pct)}
+            <div class="txt"><div class="big" id="ov-count">${watched} / ${total}</div><div class="small">episodes watched</div></div>
+          </div>
+          <button class="btn-danger" id="removeBtn">Remove show</button>
+        </div>
+      </div>
+    </div>
+    <div id="seasons">
+      ${s.seasons.map((sea) => {
+        const st = seasonStats(sea);
+        const allDone = st.total > 0 && st.watched === st.total;
+        return `
+        <div class="season ${allDone ? "" : "open"}" data-season="${sea.season}">
+          <div class="season-head">
+            <span class="caret"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
+            <span class="st">${seasonLabel(sea.season)}</span>
+            <span class="scount">${st.watched}/${st.total}</span>
+            <span class="mini-bar ${allDone ? "full" : ""}"><i style="width:${st.pct}%"></i></span>
+            <button class="season-toggle" data-toggle-season="${sea.season}" data-target="${allDone ? 0 : 1}">${allDone ? "Unmark all" : "Mark all"}</button>
+          </div>
+          <div class="eps">
+            ${sea.episodes.map((e) => epHtml(e)).join("")}
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+
+  $("#backBtn").addEventListener("click", closeShow);
+  $("#removeBtn").addEventListener("click", removeCurrent);
+  wireDetail();
+}
+
+function epHtml(e) {
+  const meta = [e.airdate || null, e.runtime ? e.runtime + " min" : null].filter(Boolean).join(" · ");
+  return `
+    <div class="ep ${e.watched ? "done" : ""}" data-ep="${e.id}">
+      <button class="check ${e.watched ? "on" : ""}" data-check="${e.id}" aria-label="Mark watched">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#052a1c" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </button>
+      <span class="ep-num">${e.number != null ? "E" + String(e.number).padStart(2, "0") : "—"}</span>
+      <div class="ep-main">
+        <div class="ep-name">${esc(e.name) || "Episode " + (e.number ?? "")}</div>
+        ${meta ? `<div class="ep-meta">${esc(meta)}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+function wireDetail() {
+  // Season expand/collapse (click on head but not on buttons)
+  $("#seasons").querySelectorAll(".season-head").forEach((h) => {
+    h.addEventListener("click", (e) => {
+      if (e.target.closest("[data-toggle-season]")) return;
+      h.closest(".season").classList.toggle("open");
+    });
+  });
+  // Episode toggles
+  $("#seasons").addEventListener("click", onDetailClick);
+}
+
+async function onDetailClick(e) {
+  const check = e.target.closest("[data-check]");
+  const epMain = e.target.closest(".ep-main");
+  const seasonBtn = e.target.closest("[data-toggle-season]");
+
+  if (seasonBtn) {
+    const season = Number(seasonBtn.dataset.toggleSeason);
+    const target = seasonBtn.dataset.target === "1";
+    try {
+      await api(`/api/shows/${current.id}/season/${season}/toggle`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ watched: target }),
+      });
+      const sea = current.seasons.find((x) => x.season === season);
+      sea.episodes.forEach((ep) => (ep.watched = target ? 1 : 0));
+      refreshSeason(season);
+      refreshOverall();
+    } catch (err) { toast(err.message, true); }
+    return;
+  }
+
+  const target = check || epMain;
+  if (!target) return;
+  const epRow = target.closest(".ep");
+  const id = Number(epRow.dataset.ep);
+  try {
+    const r = await api(`/api/episodes/${id}/toggle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    // update state
+    for (const sea of current.seasons) {
+      const ep = sea.episodes.find((x) => x.id === id);
+      if (ep) { ep.watched = r.watched ? 1 : 0; refreshSeason(sea.season); break; }
+    }
+    refreshOverall();
+  } catch (err) { toast(err.message, true); }
+}
+
+function refreshSeason(season) {
+  const sea = current.seasons.find((x) => x.season === season);
+  const el = $(`.season[data-season="${season}"]`);
+  if (!el || !sea) return;
+  const st = seasonStats(sea);
+  const allDone = st.total > 0 && st.watched === st.total;
+  el.querySelector(".scount").textContent = `${st.watched}/${st.total}`;
+  const mb = el.querySelector(".mini-bar");
+  mb.classList.toggle("full", allDone);
+  mb.querySelector("i").style.width = st.pct + "%";
+  const tog = el.querySelector("[data-toggle-season]");
+  tog.dataset.target = allDone ? 0 : 1;
+  tog.textContent = allDone ? "Unmark all" : "Mark all";
+  // episodes rows
+  sea.episodes.forEach((ep) => {
+    const row = el.querySelector(`.ep[data-ep="${ep.id}"]`);
+    if (!row) return;
+    row.classList.toggle("done", !!ep.watched);
+    row.querySelector(".check").classList.toggle("on", !!ep.watched);
+  });
+}
+
+function refreshOverall() {
+  const total = current.seasons.reduce((a, x) => a + x.episodes.length, 0);
+  const watched = current.seasons.reduce((a, x) => a + x.episodes.filter((e) => e.watched).length, 0);
+  const pct = total ? Math.round((watched / total) * 100) : 0;
+  $("#ov-count").textContent = `${watched} / ${total}`;
+  const overall = $(".overall");
+  overall.querySelector(".ring").outerHTML = ring(pct);
+}
+
+async function removeCurrent() {
+  if (!confirm(`Remove “${current.name}” and all its tracked progress?`)) return;
+  try {
+    await api("/api/shows/" + current.id, { method: "DELETE" });
+    toast("Removed from library");
+    closeShow();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---------- Init ----------
+loadLibrary();
+</script>
+</body>
+</html>
