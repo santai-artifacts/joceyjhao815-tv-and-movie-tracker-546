@@ -9,29 +9,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #0c0e14;
-    --bg-2: #12151f;
-    --surface: #171b28;
-    --surface-2: #1e2333;
-    --line: #262b3d;
-    --text: #eef1f7;
-    --muted: #8b93a7;
-    --faint: #5b6277;
+    --bg: #f6f7fb;
+    --bg-2: #eaedf5;
+    --surface: #ffffff;
+    --surface-2: #f0f2f9;
+    --line: #e3e6f0;
+    --text: #1a1d29;
+    --muted: #656d82;
+    --faint: #9aa1b4;
     --accent: #7c5cff;
-    --accent-2: #a78bfa;
-    --good: #22c98d;
-    --good-dim: #14352a;
-    --danger: #ff5c72;
+    --accent-2: #6a3df5;
+    --good: #17b877;
+    --good-dim: #e2f6ee;
+    --danger: #e11d48;
     --radius: 16px;
-    --shadow: 0 10px 40px -12px rgba(0,0,0,.6);
+    --shadow: 0 12px 34px -14px rgba(30,34,90,.22);
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
     margin: 0;
     font-family: "Inter", system-ui, sans-serif;
-    background: radial-gradient(1200px 600px at 80% -10%, #1a1730 0%, transparent 55%),
-                radial-gradient(900px 500px at -10% 10%, #10202e 0%, transparent 50%),
+    background: radial-gradient(1200px 600px at 80% -10%, #ece7ff 0%, transparent 55%),
+                radial-gradient(900px 500px at -10% 10%, #e2eefb 0%, transparent 50%),
                 var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -47,7 +47,7 @@
   header {
     position: sticky; top: 0; z-index: 30;
     backdrop-filter: blur(14px);
-    background: rgba(12,14,20,.72);
+    background: rgba(255,255,255,.75);
     border-bottom: 1px solid var(--line);
   }
   .head-inner {
@@ -124,9 +124,10 @@
   .badge {
     position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 999px;
     font-size: 11.5px; font-weight: 600; backdrop-filter: blur(6px);
-    background: rgba(12,14,20,.7); border: 1px solid var(--line);
+    background: rgba(255,255,255,.88); color: var(--text); border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
   }
-  .badge.done { background: rgba(34,201,141,.9); color: #052a1c; border-color: transparent; }
+  .badge.done { background: rgba(23,184,119,.95); color: #ffffff; border-color: transparent; }
   .card-body { padding: 14px; }
   .card-body .name { font-weight: 600; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-body .sub { color: var(--muted); font-size: 12.5px; margin: 4px 0 12px; }
@@ -506,7 +507,7 @@ function epHtml(e) {
   return `
     <div class="ep ${e.watched ? "done" : ""}" data-ep="${e.id}">
       <button class="check ${e.watched ? "on" : ""}" data-check="${e.id}" aria-label="Mark watched">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#052a1c" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
       </button>
       <span class="ep-num">${e.number != null ? "E" + String(e.number).padStart(2, "0") : "—"}</span>
       <div class="ep-main">
