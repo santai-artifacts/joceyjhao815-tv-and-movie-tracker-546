@@ -17,8 +17,8 @@
     --text: #1a1d29;
     --muted: #656d82;
     --faint: #9aa1b4;
-    --accent: #7c5cff;
-    --accent-2: #6a3df5;
+    --accent: #2f6df6;
+    --accent-2: #1e56d6;
     --good: #17b877;
     --good-dim: #e2f6ee;
     --danger: #e11d48;
@@ -30,8 +30,8 @@
   body {
     margin: 0;
     font-family: "Inter", system-ui, sans-serif;
-    background: radial-gradient(1200px 600px at 80% -10%, #ece7ff 0%, transparent 55%),
-                radial-gradient(900px 500px at -10% 10%, #e2eefb 0%, transparent 50%),
+    background: radial-gradient(1200px 600px at 80% -10%, #e1ebff 0%, transparent 55%),
+                radial-gradient(900px 500px at -10% 10%, #dcefff 0%, transparent 50%),
                 var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -69,7 +69,7 @@
     background: var(--surface); border: 1px solid var(--line); color: var(--text);
     border-radius: 12px; font-size: 15px; outline: none; transition: border-color .2s, box-shadow .2s;
   }
-  .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,.18); }
+  .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,109,246,.18); }
   .search-box .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--faint); }
 
   /* Search dropdown */
@@ -117,7 +117,7 @@
     width: 100%; padding: 10px 12px 10px 38px; background: var(--surface); border: 1px solid var(--line);
     color: var(--text); border-radius: 11px; font-size: 14px; outline: none; transition: border-color .2s, box-shadow .2s;
   }
-  .lib-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,.15); }
+  .lib-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,109,246,.15); }
   .lib-search .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); display: flex; }
   .segmented { display: flex; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 3px; gap: 2px; }
   .segmented button {
