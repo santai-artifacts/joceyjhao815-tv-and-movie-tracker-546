@@ -153,13 +153,13 @@
     background: rgba(255,255,255,.88); color: var(--text); border: 1px solid var(--line);
     box-shadow: 0 2px 8px rgba(0,0,0,.12);
   }
-  .badge.done { background: rgba(23,184,119,.95); color: #ffffff; border-color: transparent; }
+  .badge.done { background: rgba(47,109,246,.95); color: #ffffff; border-color: transparent; }
   .card-body { padding: 14px; }
   .card-body .name { font-weight: 600; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-body .sub { color: var(--muted); font-size: 12.5px; margin: 4px 0 12px; }
   .bar { height: 7px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
   .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 999px; transition: width .5s ease; }
-  .bar.full > i { background: linear-gradient(90deg, var(--good), #5be0b0); }
+  .bar.full > i { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
   .prog-txt { display: flex; justify-content: space-between; font-size: 12px; margin-top: 8px; color: var(--muted); }
   .prog-txt b { color: var(--text); font-weight: 600; }
 
@@ -221,7 +221,7 @@
   .season-head .scount { color: var(--muted); font-size: 13px; }
   .season-head .mini-bar { flex: 1; max-width: 200px; height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-left: auto; }
   .season-head .mini-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-  .season-head .mini-bar.full > i { background: var(--good); }
+  .season-head .mini-bar.full > i { background: var(--accent); }
   .season-toggle {
     padding: 7px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--line);
     background: var(--bg-2); color: var(--text); white-space: nowrap; transition: background .15s;
@@ -244,7 +244,7 @@
     transition: background .15s, border-color .15s, transform .1s; background: transparent;
   }
   .check:hover { border-color: var(--accent); }
-  .check.on { background: var(--good); border-color: var(--good); }
+  .check.on { background: var(--accent); border-color: var(--accent); }
   .check.on:active { transform: scale(.88); }
   .check svg { opacity: 0; transform: scale(.5); transition: opacity .15s, transform .15s; }
   .check.on svg { opacity: 1; transform: scale(1); }
@@ -505,7 +505,7 @@ let current = null;
 
 function ring(pct, size = 52) {
   const r = (size - 8) / 2, c = 2 * Math.PI * r, off = c - (pct / 100) * c;
-  const col = pct === 100 ? "var(--good)" : "var(--accent)";
+  const col = "var(--accent)";
   return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
     <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="6"/>
     <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round"
