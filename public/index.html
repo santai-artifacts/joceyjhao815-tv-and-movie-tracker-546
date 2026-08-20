@@ -110,6 +110,32 @@
   .stat .n { font-family: "Sora"; font-weight: 700; font-size: 26px; }
   .stat .l { color: var(--muted); font-size: 13px; margin-top: 2px; }
 
+  /* Library toolbar */
+  .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 4px 0 22px; }
+  .lib-search { position: relative; flex: 1; min-width: 190px; max-width: 320px; }
+  .lib-search input {
+    width: 100%; padding: 10px 12px 10px 38px; background: var(--surface); border: 1px solid var(--line);
+    color: var(--text); border-radius: 11px; font-size: 14px; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .lib-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,.15); }
+  .lib-search .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); display: flex; }
+  .segmented { display: flex; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 3px; gap: 2px; }
+  .segmented button {
+    border: none; background: transparent; color: var(--muted); padding: 7px 13px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; transition: background .15s, color .15s; white-space: nowrap;
+  }
+  .segmented button:hover { color: var(--text); }
+  .segmented button.on { background: var(--accent); color: #fff; }
+  .lib-sort { margin-left: auto; }
+  .lib-sort select {
+    appearance: none; -webkit-appearance: none; background: var(--surface); border: 1px solid var(--line);
+    color: var(--text); padding: 10px 34px 10px 13px; border-radius: 11px; font-size: 14px; font-family: inherit;
+    cursor: pointer; outline: none; transition: border-color .2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239aa1b4' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .lib-sort select:focus { border-color: var(--accent); }
+
   /* Show grid */
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; margin-top: 8px; }
   .card {
@@ -273,6 +299,29 @@
         <h1>Your shows, tracked to the episode.</h1>
         <p>Search for any series, add it, and tick off episodes season by season. Your progress is saved automatically.</p>
       </section>
+      <div class="toolbar" id="toolbar" hidden>
+        <div class="lib-search">
+          <span class="icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input id="libSearch" type="text" placeholder="Search your shows…" autocomplete="off" />
+        </div>
+        <div class="segmented" id="libFilter">
+          <button data-filter="all" class="on">All</button>
+          <button data-filter="progress">In progress</button>
+          <button data-filter="finished">Finished</button>
+          <button data-filter="notstarted">Not started</button>
+        </div>
+        <div class="lib-sort">
+          <select id="libSort" aria-label="Sort shows">
+            <option value="added">Recently added</option>
+            <option value="az">Title A–Z</option>
+            <option value="za">Title Z–A</option>
+            <option value="newest">Release: newest</option>
+            <option value="oldest">Release: oldest</option>
+          </select>
+        </div>
+      </div>
       <div id="library"></div>
     </div>
   </div>
@@ -357,13 +406,44 @@ resultsEl.addEventListener("click", async (e) => {
 });
 
 // ---------- Library / Home ----------
-async function loadLibrary() {
-  let shows;
-  try { shows = await api("/api/shows"); } catch { shows = []; }
-  addedIds = new Set(shows.map((s) => s.id));
+let libraryShows = [];
+let libFilter = "all";
+let libSort = "added";
+let libQuery = "";
 
+function statusOf(s) {
+  if (!s.total || s.watched === 0) return "notstarted";
+  if (s.watched >= s.total) return "finished";
+  return "progress";
+}
+
+function initLibraryControls() {
+  const search = $("#libSearch");
+  search.addEventListener("input", () => { libQuery = search.value.trim().toLowerCase(); renderLibrary(); });
+
+  $("#libFilter").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-filter]");
+    if (!b) return;
+    libFilter = b.dataset.filter;
+    $("#libFilter").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    renderLibrary();
+  });
+
+  $("#libSort").addEventListener("change", (e) => { libSort = e.target.value; renderLibrary(); });
+}
+
+async function loadLibrary() {
+  try { libraryShows = await api("/api/shows"); } catch { libraryShows = []; }
+  addedIds = new Set(libraryShows.map((s) => s.id));
+  renderLibrary();
+}
+
+function renderLibrary() {
   const lib = $("#library");
-  if (!shows.length) {
+  const toolbar = $("#toolbar");
+
+  if (!libraryShows.length) {
+    toolbar.hidden = true;
     lib.innerHTML = `
       <div class="empty">
         <div class="em">🍿</div>
@@ -372,7 +452,32 @@ async function loadLibrary() {
       </div>`;
     return;
   }
-  lib.innerHTML = `<div class="grid">${shows.map(cardHtml).join("")}</div>`;
+  toolbar.hidden = false;
+
+  let list = libraryShows.slice();
+  if (libFilter !== "all") list = list.filter((s) => statusOf(s) === libFilter);
+  if (libQuery) list = list.filter((s) => s.name.toLowerCase().includes(libQuery));
+
+  const cmp = {
+    added: (a, b) => (b.added_at || 0) - (a.added_at || 0),
+    az: (a, b) => a.name.localeCompare(b.name),
+    za: (a, b) => b.name.localeCompare(a.name),
+    newest: (a, b) => (b.premiered || "").localeCompare(a.premiered || ""),
+    oldest: (a, b) => (a.premiered || "0000").localeCompare(b.premiered || "9999"),
+  }[libSort];
+  if (cmp) list.sort(cmp);
+
+  if (!list.length) {
+    lib.innerHTML = `
+      <div class="empty">
+        <div class="em">🔍</div>
+        <h3>No matches</h3>
+        <p>No shows match your current filter${libQuery ? " and search" : ""}. Try a different filter${libQuery ? " or clear the search" : ""}.</p>
+      </div>`;
+    return;
+  }
+
+  lib.innerHTML = `<div class="grid">${list.map(cardHtml).join("")}</div>`;
   lib.querySelectorAll(".card").forEach((c) => c.addEventListener("click", () => openShow(Number(c.dataset.id))));
 }
 
@@ -593,6 +698,7 @@ async function removeCurrent() {
 }
 
 // ---------- Init ----------
+initLibraryControls();
 loadLibrary();
 </script>
 </body>
